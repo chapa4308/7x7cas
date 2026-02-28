@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Игра - 7x7 Casino</title>
+    <title>7x7 Casino - Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,64 +31,83 @@
             document.getElementById('balance').innerText = balance.toFixed(2);
         }
 
-        switch (gameType) {
-            case 'olympus':
-                gameTitleEl.innerText = '⚡ Божественные врата';
-                gameContentEl.innerHTML = `
-                    <div class="slots-container">
-                        <div class="reel" id="r1">💎</div>
-                        <div class="reel" id="r2">💎</div>
-                        <div class="reel" id="r3">💎</div>
-                    </div>
-                    <button class="action-btn" onclick="spinSlots()">Крутить (10$)</button>
-                `;
-                break;
-            case 'plinko':
-                gameTitleEl.innerText = '🔴 Плинко';
-                gameContentEl.innerHTML = `
-                    <div class="plinko-board" id="board">
-                        <div class="ball" id="ball" style="top:0; left:142px;"></div>
-                    </div>
-                    <button class="action-btn" onclick="dropBall()">Бросить (5$)</button>
-                `;
-                break;
-            default:
-                gameTitleEl.innerText = 'Игра не найдена';
+        // --- ИНИЦИАЛИЗАЦИЯ ИГР ---
+        if (gameType === 'olympus') {
+            gameTitleEl.innerText = 'Gates of Olympus';
+            createSlotMachine(['⚡', '🔱', '💎', '🏺', '👑', '🔴', '🟢', '🔵']);
+        } else if (gameType === 'candy') {
+            gameTitleEl.innerText = 'Sweet Bonanza';
+            createSlotMachine(['🍭', '🍉', '🍇', '🍌', '🍎', '💙', '💜', '🧡']);
+        } else if (gameType === 'plinko') {
+            gameTitleEl.innerText = 'Plinko';
+            createPlinko();
         }
 
-        // --- ЛОГИКА ИГР ---
-        function spinSlots() {
+        // --- ФУНКЦИЯ СОЗДАНИЯ СЛОТОВ ---
+        function createSlotMachine(symbols) {
+            let gridHtml = '<div class="slot-grid">';
+            for(let i=0; i<30; i++) {
+                gridHtml += `<div class="grid-cell" id="cell-${i}">${symbols[Math.floor(Math.random()*symbols.length)]}</div>`;
+            }
+            gridHtml += '</div>';
+            gameContentEl.innerHTML = gridHtml + '<button class="action-btn" onclick="spinGrid()">Крутить (10$)</button>';
+        }
+
+        function spinGrid() {
             if (balance < 10) return alert('Нет денег!');
             updateBalance(-10);
-            const symbols = ['💎', '⚡', '🔱', '🍒'];
-            for (let i = 1; i <= 3; i++) {
-                document.getElementById(`r${i}`).innerText = symbols[Math.floor(Math.random() * symbols.length)];
-            }
-            if (document.getElementById('r1').innerText === document.getElementById('r2').innerText &&
-                document.getElementById('r2').innerText === document.getElementById('r3').innerText) {
-                updateBalance(50);
-                alert('Выигрыш: 50$!');
+            const cells = document.querySelectorAll('.grid-cell');
+            cells.forEach(cell => {
+                // В оригинале символы падают, тут просто меняем их быстро
+                cell.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    cell.innerText = ['⚡', '🔱', '💎', '🏺', '👑', '🔴', '🟢', '🔵', '🍭', '🍉'][Math.floor(Math.random()*10)];
+                    cell.style.transform = 'translateY(0px)';
+                }, 100);
+            });
+            // Логика выигрыша упрощена (проверка на 3 одинаковых в ряд - для теста)
+            if(Math.random() > 0.7) {
+                updateBalance(30);
+                alert('Выигрыш!');
             }
         }
 
-        function dropBall() {
+        // --- ФУНКЦИЯ СОЗДАНИЯ ПЛИНКО ---
+        function createPlinko() {
+            let boardHtml = '<div class="plinko-wrapper"><div class="plinko-board" id="board">';
+            // Генерируем пины
+            for(let row=1; row<10; row++) {
+                for(let col=0; col<=row; col++) {
+                    let left = 200 + (col * 40) - (row * 20);
+                    let top = row * 35;
+                    boardHtml += `<div class="pin" style="left:${left}px; top:${top}px;"></div>`;
+                }
+            }
+            boardHtml += '<div class="ball" id="ball" style="top:0px; left:195px; background:white; width:10px; height:10px; position:absolute; border-radius:50%; transition: all 0.1s linear;"></div>';
+            boardHtml += '</div></div><button class="action-btn" onclick="dropPlinko()">Бросить (5$)</button>';
+            gameContentEl.innerHTML = boardHtml;
+        }
+
+        function dropPlinko() {
             if (balance < 5) return alert('Нет денег!');
             updateBalance(-5);
             const ball = document.getElementById('ball');
             let top = 0;
-            let left = 142;
-            let timer = setInterval(() => {
-                top += 20;
-                left += (Math.random() - 0.5) * 40;
+            let left = 195;
+            
+            let dropInterval = setInterval(() => {
+                top += 10;
+                left += (Math.random() - 0.5) * 15;
                 ball.style.top = top + 'px';
                 ball.style.left = left + 'px';
-                if (top > 280) {
-                    clearInterval(timer);
-                    updateBalance(Math.random() > 0.7 ? 15 : 0);
+                
+                if (top > 350) {
+                    clearInterval(dropInterval);
                     ball.style.top = '0px';
-                    ball.style.left = '142px';
+                    ball.style.left = '195px';
+                    updateBalance(Math.random() > 0.8 ? 10 : 0);
                 }
-            }, 100);
+            }, 50);
         }
     </script>
 </body>
