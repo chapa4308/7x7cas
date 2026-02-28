@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Игра - 7x7 Casino</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">⚡ 7x7</div>
+        <div class="balance-box">Баланс: <span id="balance">1000.00</span> $</div>
+    </header>
+
+    <div class="main-container">
+        <div class="game-area">
+            <h1 id="game-title">Загрузка...</h1>
+            <div id="game-content"></div>
+            <a href="index.html" class="back-btn">Назад в меню</a>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameType = urlParams.get('type');
+        const gameTitleEl = document.getElementById('game-title');
+        const gameContentEl = document.getElementById('game-content');
+        let balance = 1000.00;
+
+        function updateBalance(amount) {
+            balance += amount;
+            document.getElementById('balance').innerText = balance.toFixed(2);
+        }
+
+        switch (gameType) {
+            case 'olympus':
+                gameTitleEl.innerText = '⚡ Божественные врата';
+                gameContentEl.innerHTML = `
+                    <div class="slots-container">
+                        <div class="reel" id="r1">💎</div>
+                        <div class="reel" id="r2">💎</div>
+                        <div class="reel" id="r3">💎</div>
+                    </div>
+                    <button class="action-btn" onclick="spinSlots()">Крутить (10$)</button>
+                `;
+                break;
+            case 'plinko':
+                gameTitleEl.innerText = '🔴 Плинко';
+                gameContentEl.innerHTML = `
+                    <div class="plinko-board" id="board">
+                        <div class="ball" id="ball" style="top:0; left:142px;"></div>
+                    </div>
+                    <button class="action-btn" onclick="dropBall()">Бросить (5$)</button>
+                `;
+                break;
+            default:
+                gameTitleEl.innerText = 'Игра не найдена';
+        }
+
+        // --- ЛОГИКА ИГР ---
+        function spinSlots() {
+            if (balance < 10) return alert('Нет денег!');
+            updateBalance(-10);
+            const symbols = ['💎', '⚡', '🔱', '🍒'];
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`r${i}`).innerText = symbols[Math.floor(Math.random() * symbols.length)];
+            }
+            if (document.getElementById('r1').innerText === document.getElementById('r2').innerText &&
+                document.getElementById('r2').innerText === document.getElementById('r3').innerText) {
+                updateBalance(50);
+                alert('Выигрыш: 50$!');
+            }
+        }
+
+        function dropBall() {
+            if (balance < 5) return alert('Нет денег!');
+            updateBalance(-5);
+            const ball = document.getElementById('ball');
+            let top = 0;
+            let left = 142;
+            let timer = setInterval(() => {
+                top += 20;
+                left += (Math.random() - 0.5) * 40;
+                ball.style.top = top + 'px';
+                ball.style.left = left + 'px';
+                if (top > 280) {
+                    clearInterval(timer);
+                    updateBalance(Math.random() > 0.7 ? 15 : 0);
+                    ball.style.top = '0px';
+                    ball.style.left = '142px';
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
